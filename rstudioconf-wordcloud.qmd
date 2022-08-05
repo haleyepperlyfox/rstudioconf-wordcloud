@@ -1,6 +1,7 @@
 ---
 title: "#rstudioconf2022 Twitter wordcloud"
 author: "Haley Fox"
+date: August 5, 2022
 format: html
 editor: visual
 ---
@@ -47,13 +48,14 @@ tweets_clean <- tweets %>%
   mutate(text = gsub("https\\S*", "", text)) %>% #remove links
   mutate(text = gsub("@\\S*", "", text)) %>%  #remove @ symbol
   mutate(text = gsub("amp", "", text)) %>% #remove &
-  mutate(text = gsub("[\r\n]", "", text)) %>%  
+  mutate(text = gsub("[\r\n]", "", text)) %>%  #remove when jumping to new line
   mutate(text = gsub("[[:punct:]]", "", text)) #remove emojis
 
 ```
 
 
 Format tweets so each word is separated.
+
 ```{r}
 #| label: read-tweets
 #| code-overflow: wrap
@@ -67,8 +69,9 @@ words_df <- data.frame(matrix(unlist(tweets_list), nrow=1399, byrow=TRUE),string
 
 
 Create frequency table for words.
-```{r}
 
+```{r}
+#| label: freq-table
 
 # convert dataframe from wide to long format
 words_col <- words_df %>% 
@@ -86,26 +89,32 @@ words_freq <- plyr::count(words_col, 'word')
 words_freq <- words_freq %>% 
   filter(freq < 5000)
 
-# remove some words
+# remove some words that aren't very informative so they don't show up in the wordcloud
 words_freq1 <- words_freq %>% 
   filter(!word %in% c("this","that","with","about","from","like","they","their","sure","would","through","even","when","only","some","also","been","into","after","next","will","what","before","over","have","your","were","being","during","such","there","then","much","very","because","other","then","just","really","something","these"))
 ```
 
 
 Create wordcloud number 1 - not great visualization because "rstudioconf" and "rstats" are at such a greater frequency than the other words.
+
 ```{r}
+#| label: word-cloud-1
 wordcloud(words = words_freq1$word, freq = words_freq1$freq, min.freq = 20, max.words = 200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 ```
 
 
 Change frequencies and make a new wordcloud that's much better!
+
 ```{r}
+#| label: word-cloud-2
+
+# change frequencies so anthing over 1000 is set to 150, anything from 400 - 1000 is set to 125, and anything from 100 - 400 is set to 110.
 words_freq2 <- words_freq1 %>% 
   mutate(new_freq = ifelse(freq > 1000, 150,
          ifelse(freq > 400 & freq < 1000, 125,
          ifelse(freq > 100 & freq < 400, 110, freq))))
 
-
+# make wordcloud
 wordcloud(words = words_freq2$word, freq = words_freq2$new_freq, min.freq = 20, max.words = 200, random.order=FALSE, rot.per=0.35, scale=c(4,.09),  colors=brewer.pal(8, "Dark2"))
 ```
 
